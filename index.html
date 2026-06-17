@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>かぞくきろく</title>
+<title>みんなの日記</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@400;500;700&display=swap');
 
@@ -347,18 +347,26 @@
     line-height: 1.6;
   }
   .gas-notice strong { display: block; margin-bottom: 2px; }
+  /* LOTTIE */
+  #lottie-container {
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+  }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/lottie-web/5.12.2/lottie.min.js"></script>
 </head>
 <body>
 
 <div class="header">
   <div class="header-date" id="headerDate"></div>
-  <div class="header-title">かぞくきろく 🏠</div>
-  <div class="header-subtitle">今日のきろくをつけよう</div>
+  <div class="header-title">みんなの日記 🏠</div>
+  <div class="header-subtitle">今日もいちにちおつかれさま</div>
 </div>
 
 <!-- SCREEN 1: メンバー選択 -->
 <div class="screen active" id="screen-select">
+  <div id="lottie-container"></div>
   <p class="section-label">だれのきろく？</p>
 
   <div class="member-grid">
@@ -370,17 +378,17 @@
       <div class="avatar">👨</div>
       <div class="name">パパ</div>
     </button>
-    <button class="member-btn" onclick="selectMember('イチコ','🧒')">
-      <div class="avatar">🧒</div>
-      <div class="name">イチコ</div>
-    </button>
-    <button class="member-btn" onclick="selectMember('ニコ','👧')">
+    <button class="member-btn" onclick="selectMember('あんな','👧')">
       <div class="avatar">👧</div>
-      <div class="name">ニコ</div>
+      <div class="name">あんな</div>
     </button>
-    <button class="member-btn" onclick="selectMember('サニコ','🐣')">
-      <div class="avatar">🐣</div>
-      <div class="name">サニコ</div>
+    <button class="member-btn" onclick="selectMember('まりな','🌸')">
+      <div class="avatar">🌸</div>
+      <div class="name">まりな</div>
+    </button>
+    <button class="member-btn" onclick="selectMember('はんな','🐥')">
+      <div class="avatar">🐥</div>
+      <div class="name">はんな</div>
     </button>
   </div>
 
@@ -466,6 +474,15 @@
 </div>
 
 <script>
+  // Lottie
+  lottie.loadAnimation({
+    container: document.getElementById('lottie-container'),
+    renderer: 'svg',
+    loop: true,
+    autoplay: true,
+    path: '_0101J_S_02.json'
+  });
+
   // State
   let currentMember = { name: '', avatar: '' };
   let selectedActivity = '';

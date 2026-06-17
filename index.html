@@ -335,6 +335,35 @@
     padding: 40px 0;
   }
 
+  /* DELETE BUTTONS */
+  .btn-delete-one {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: var(--text-soft);
+    padding: 4px;
+    flex-shrink: 0;
+    -webkit-tap-highlight-color: transparent;
+    opacity: 0.5;
+  }
+  .btn-delete-one:active { opacity: 1; }
+
+  .btn-clear-all {
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--bad);
+    border-radius: 12px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--bad);
+    cursor: pointer;
+    margin-bottom: 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-clear-all:active { background: #FFEDED; }
+
   /* GAS NOTICE */
   .gas-notice {
     background: #FFF8E1;
@@ -465,10 +494,7 @@
   <button class="btn-back" onclick="showScreen('screen-select')">← もどる</button>
   <p class="section-label">これまでのきろく</p>
 
-  <div class="gas-notice">
-    <strong>💡 Googleスプレッドシート連携について</strong>
-    GASのWebhook URLを設定すると、記録が自動でスプレッドシートに保存されます。現在はブラウザ内に保存中。
-  </div>
+  <button class="btn-clear-all" onclick="clearAllRecords()">🗑️ 全件削除</button>
 
   <div id="history-list"></div>
 </div>
@@ -578,6 +604,22 @@
     showScreen('screen-done');
   }
 
+  // Delete one
+  function deleteRecord(index) {
+    if (!confirm('この記録を削除しますか？')) return;
+    const all = JSON.parse(localStorage.getItem('familyRecords') || '[]');
+    all.splice(index, 1);
+    localStorage.setItem('familyRecords', JSON.stringify(all));
+    renderHistory();
+  }
+
+  // Clear all
+  function clearAllRecords() {
+    if (!confirm('全件削除しますか？')) return;
+    localStorage.removeItem('familyRecords');
+    renderHistory();
+  }
+
   // History
   function renderHistory() {
     const all = JSON.parse(localStorage.getItem('familyRecords') || '[]');
@@ -591,7 +633,7 @@
     const mentalLabel = { good: ['よかった','tag-good'], normal: ['ふつう','tag-normal'], bad: ['よくなかった','tag-bad'] };
     const actLabel = { out: ['外出した','tag-out'], stay: ['おうちにいた','tag-stay'] };
 
-    container.innerHTML = all.map(r => {
+    container.innerHTML = all.map((r, i) => {
       const [mText, mClass] = mentalLabel[r.mental] || ['?',''];
       const [aText, aClass] = actLabel[r.activity] || ['?',''];
       const noteHtml = r.note ? `<div class="h-note">💬 ${r.note}</div>` : '';
@@ -607,6 +649,7 @@
             </div>
             ${noteHtml}
           </div>
+          <button class="btn-delete-one" onclick="deleteRecord(${i})" title="削除">🗑️</button>
         </div>
       `;
     }).join('');

@@ -349,8 +349,27 @@
   }
   .btn-delete-one:active { opacity: 1; }
 
-  .btn-clear-all {
-    width: 100%;
+  .delete-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .btn-select-all {
+    flex: 1;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 10px;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text-soft);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-select-all:active { background: var(--bg); }
+
+  .btn-clear-selected {
+    flex: 1;
     background: none;
     border: 1.5px solid var(--bad);
     border-radius: 12px;
@@ -359,10 +378,27 @@
     font-size: 13px;
     color: var(--bad);
     cursor: pointer;
-    margin-bottom: 14px;
     -webkit-tap-highlight-color: transparent;
+    opacity: 0.4;
+    pointer-events: none;
   }
-  .btn-clear-all:active { background: #FFEDED; }
+  .btn-clear-selected.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .btn-clear-selected.active:active { background: #FFEDED; }
+
+  .history-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    accent-color: var(--bad);
+    cursor: pointer;
+  }
+  .history-item.selected {
+    border: 1.5px solid var(--bad);
+    background: #FFF5F5;
+  }
 
   /* GAS NOTICE */
   .gas-notice {
@@ -494,7 +530,10 @@
   <button class="btn-back" onclick="showScreen('screen-select')">← もどる</button>
   <p class="section-label">これまでのきろく</p>
 
-  <button class="btn-clear-all" onclick="clearAllRecords()">🗑️ 全件削除</button>
+  <div class="delete-toolbar">
+    <button class="btn-select-all" id="btn-select-all" onclick="toggleSelectAll()">☑️ 全て選択</button>
+    <button class="btn-clear-selected" id="btn-clear-selected" onclick="clearSelected()">🗑️ 消去</button>
+  </div>
 
   <div id="history-list"></div>
 </div>
@@ -613,10 +652,34 @@
     renderHistory();
   }
 
-  // Clear all
-  function clearAllRecords() {
-    if (!confirm('全件削除しますか？')) return;
-    localStorage.removeItem('familyRecords');
+  // Toggle select all
+  function toggleSelectAll() {
+    const checkboxes = document.querySelectorAll('.record-checkbox');
+    const allChecked = [...checkboxes].every(c => c.checked);
+    checkboxes.forEach(c => {
+      c.checked = !allChecked;
+      c.closest('.history-item').classList.toggle('selected', !allChecked);
+    });
+    updateClearBtn();
+  }
+
+  // Update clear button state
+  function updateClearBtn() {
+    const anyChecked = [...document.querySelectorAll('.record-checkbox')].some(c => c.checked);
+    document.getElementById('btn-clear-selected').classList.toggle('active', anyChecked);
+  }
+
+  // Clear selected
+  function clearSelected() {
+    const checkboxes = [...document.querySelectorAll('.record-checkbox')];
+    const selectedIndices = checkboxes
+      .map((c, i) => c.checked ? i : -1)
+      .filter(i => i !== -1)
+      .reverse(); // 後ろから削除してインデックスずれを防ぐ
+    if (!confirm(`${selectedIndices.length}件削除しますか？`)) return;
+    const all = JSON.parse(localStorage.getItem('familyRecords') || '[]');
+    selectedIndices.forEach(i => all.splice(i, 1));
+    localStorage.setItem('familyRecords', JSON.stringify(all));
     renderHistory();
   }
 
@@ -638,7 +701,8 @@
       const [aText, aClass] = actLabel[r.activity] || ['?',''];
       const noteHtml = r.note ? `<div class="h-note">💬 ${r.note}</div>` : '';
       return `
-        <div class="history-item">
+        <div class="history-item" id="item-${i}">
+          <input type="checkbox" class="record-checkbox" onchange="updateClearBtn(); this.closest('.history-item').classList.toggle('selected', this.checked)">
           <div class="h-av">${r.avatar}</div>
           <div class="h-info">
             <div class="h-name">${r.name}</div>
@@ -649,7 +713,6 @@
             </div>
             ${noteHtml}
           </div>
-          <button class="btn-delete-one" onclick="deleteRecord(${i})" title="削除">🗑️</button>
         </div>
       `;
     }).join('');

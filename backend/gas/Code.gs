@@ -1,7 +1,6 @@
-// かぞくきろく - Google Apps Script Webhook
-// スプレッドシートID を SHEET_ID に設定してください
+// みんなの日記 - Google Apps Script Webhook
 
-const SHEET_ID = ''; // ← GoogleスプレッドシートのIDをここに入れる
+const SHEET_ID = '1R8hg0owN6V_L9NsrJ038RGU7daEo2e_coaUSbtUhUoYacxOWAhyddbM7';
 const SHEET_NAME = 'records';
 
 function doPost(e) {
@@ -35,9 +34,23 @@ function doPost(e) {
   }
 }
 
-// テスト用
+// 全データ取得（履歴表示用）
 function doGet(e) {
-  return ContentService
-    .createTextOutput(JSON.stringify({ status: 'ok', message: 'family-tracker GAS is running' }))
-    .setMimeType(ContentService.MimeType.JSON);
+  try {
+    const sheet = SpreadsheetApp.getActiveSheet();
+    const rows = sheet.getDataRange().getValues();
+    const headers = rows[0];
+    const data = rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => obj[h] = row[i]);
+      return obj;
+    });
+    return ContentService
+      .createTextOutput(JSON.stringify(data))
+      .setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return ContentService
+      .createTextOutput(JSON.stringify({ error: err.message }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 }

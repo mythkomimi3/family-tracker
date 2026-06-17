@@ -684,38 +684,58 @@
   }
 
   // History
-  function renderHistory() {
-    const all = JSON.parse(localStorage.getItem('familyRecords') || '[]');
+  async function renderHistory() {
     const container = document.getElementById('history-list');
-
-    if (all.length === 0) {
-      container.innerHTML = '<div class="empty-msg">まだきろくがないよ</div>';
-      return;
-    }
-
     const mentalLabel = { good: ['よかった','tag-good'], normal: ['ふつう','tag-normal'], bad: ['よくなかった','tag-bad'] };
     const actLabel = { out: ['外出した','tag-out'], stay: ['おうちにいた','tag-stay'] };
 
-    container.innerHTML = all.map((r, i) => {
-      const [mText, mClass] = mentalLabel[r.mental] || ['?',''];
-      const [aText, aClass] = actLabel[r.activity] || ['?',''];
-      const noteHtml = r.note ? `<div class="h-note">💬 ${r.note}</div>` : '';
-      return `
-        <div class="history-item" id="item-${i}">
-          <input type="checkbox" class="record-checkbox" onchange="updateClearBtn(); this.closest('.history-item').classList.toggle('selected', this.checked)">
-          <div class="h-av">${r.avatar}</div>
-          <div class="h-info">
-            <div class="h-name">${r.name}</div>
-            <div class="h-date">${r.date}</div>
-            <div class="h-tags">
-              <span class="h-tag ${aClass}">${aText}</span>
-              <span class="h-tag ${mClass}">${mText}</span>
+    function buildHTML(all) {
+      if (all.length === 0) {
+        container.innerHTML = '<div class="empty-msg">まだきろくがないよ</div>';
+        return;
+      }
+      container.innerHTML = all.map((r, i) => {
+        const [mText, mClass] = mentalLabel[r.mental] || ['?',''];
+        const [aText, aClass] = actLabel[r.activity] || ['?',''];
+        const noteHtml = r.note ? `<div class="h-note">💬 ${r.note}</div>` : '';
+        return `
+          <div class="history-item" id="item-${i}">
+            <input type="checkbox" class="record-checkbox" onchange="updateClearBtn(); this.closest('.history-item').classList.toggle('selected', this.checked)">
+            <div class="h-av">${r.avatar}</div>
+            <div class="h-info">
+              <div class="h-name">${r.name}</div>
+              <div class="h-date">${r.date}</div>
+              <div class="h-tags">
+                <span class="h-tag ${aClass}">${aText}</span>
+                <span class="h-tag ${mClass}">${mText}</span>
+              </div>
+              ${noteHtml}
             </div>
-            ${noteHtml}
           </div>
-        </div>
-      `;
-    }).join('');
+        `;
+      }).join('');
+    }
+
+    // GASからデータ取得
+    if (GAS_URL) {
+      container.innerHTML = '<div class="empty-msg">📡 取得中...</div>';
+      try {
+        const res = await fetch(GAS_URL, { mode: 'cors' });
+        const data = await res.json();
+        // 日付の新しい順にソート
+        const sorted = data.sort((a, b) =>
+          new Date(b.savedAt || b.date) - new Date(a.savedAt || a.date)
+        );
+        buildHTML(sorted);
+        return;
+      } catch(e) {
+        console.warn('GAS取得失敗、localStorageにフォールバック:', e);
+      }
+    }
+
+    // フォールバック: localStorage
+    const all = JSON.parse(localStorage.getItem('familyRecords') || '[]');
+    buildHTML(all);
   }
 </script>
 </body>

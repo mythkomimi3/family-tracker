@@ -400,18 +400,90 @@
     background: #FFF5F5;
   }
 
-  /* GAS NOTICE */
-  .gas-notice {
-    background: #FFF8E1;
-    border: 1px solid #FFD54F;
-    border-radius: 12px;
-    padding: 12px 14px;
-    font-size: 12px;
-    color: #8B6914;
-    margin-bottom: 14px;
-    line-height: 1.6;
+  /* SETTINGS */
+  .btn-settings {
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--border);
+    border-radius: 14px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--text-soft);
+    cursor: pointer;
+    margin-top: 10px;
+    -webkit-tap-highlight-color: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
   }
-  .gas-notice strong { display: block; margin-bottom: 2px; }
+  .btn-settings:active { background: var(--bg); }
+
+  .settings-label {
+    font-size: 11px;
+    color: var(--text-soft);
+    letter-spacing: 0.08em;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .settings-input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text);
+    background: var(--bg);
+    outline: none;
+    margin-bottom: 14px;
+    word-break: break-all;
+  }
+  .settings-input:focus { border-color: var(--primary); }
+
+  .btn-save-gas {
+    width: 100%;
+    background: var(--primary);
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    padding: 14px;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 14px rgba(255,140,105,0.3);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-save-gas:active { transform: scale(0.97); }
+
+  .btn-test-gas {
+    width: 100%;
+    background: none;
+    border: 1.5px solid var(--primary);
+    border-radius: 14px;
+    padding: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--primary);
+    cursor: pointer;
+    margin-bottom: 14px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn-test-gas:active { background: #FFF0E8; }
+
+  .test-result {
+    text-align: center;
+    font-size: 13px;
+    padding: 10px;
+    border-radius: 10px;
+    margin-bottom: 14px;
+    display: none;
+  }
+  .test-result.success { background: #E8F7F0; color: #3D9B6E; display: block; }
+  .test-result.fail    { background: #FFEDED; color: #C04040; display: block; }
   /* LOTTIE */
   #lottie-container {
     width: 100%;
@@ -460,6 +532,9 @@
   <!-- 履歴ボタン -->
   <p class="section-label" style="margin-top:28px">きろくをみる</p>
   <button class="btn-history" onclick="showScreen('screen-history')" style="border-radius:14px;">📋 これまでのきろく</button>
+
+  <!-- 設定ボタン -->
+  <button class="btn-settings" onclick="showScreen('screen-settings')">⚙️ 設定</button>
 </div>
 
 <!-- SCREEN 2: 記録入力 -->
@@ -538,6 +613,21 @@
   <div id="history-list"></div>
 </div>
 
+<!-- SCREEN 5: 設定 -->
+<div class="screen" id="screen-settings">
+  <button class="btn-back" onclick="showScreen('screen-select')">← もどる</button>
+  <p class="section-label">設定</p>
+
+  <div class="card">
+    <div class="settings-label">GAS Webhook URL</div>
+    <textarea class="settings-input" id="gas-url-input" rows="3" placeholder="https://script.google.com/macros/s/..."></textarea>
+
+    <button class="btn-save-gas" onclick="saveGasUrl()">💾 保存する</button>
+    <button class="btn-test-gas" onclick="testGasConnection()">🔌 接続テスト</button>
+    <div class="test-result" id="test-result"></div>
+  </div>
+</div>
+
 <script>
   // Lottie
   lottie.loadAnimation({
@@ -552,7 +642,10 @@
   let currentMember = { name: '', avatar: '' };
   let selectedActivity = '';
   let selectedMental = '';
-  const GAS_URL = 'https://script.google.com/macros/s/AKfycbwXbAPqjIJRtk7ZPClQup3ivmHRKd3f9m-1mI396A6JpY9KQ8Sc7kvIoMVL6Ro98sJbjQ/exec';
+
+  // GAS URL: localStorageから読み込み（なければデフォルト値）
+  const DEFAULT_GAS_URL = 'https://script.google.com/macros/s/AKfycbwXbAPqjIJRtk7ZPClQup3ivmHRKd3f9m-1mI396A6JpY9KQ8Sc7kvIoMVL6Ro98sJbjQ/exec';
+  let GAS_URL = localStorage.getItem('gasUrl') || DEFAULT_GAS_URL;
 
   // Init date
   const today = new Date();
@@ -569,6 +662,38 @@
     document.getElementById(id).classList.add('active');
     window.scrollTo(0, 0);
     if (id === 'screen-history') renderHistory();
+    if (id === 'screen-settings') {
+      document.getElementById('gas-url-input').value = GAS_URL;
+      document.getElementById('test-result').className = 'test-result';
+    }
+  }
+
+  // Settings: GAS URL保存
+  function saveGasUrl() {
+    const url = document.getElementById('gas-url-input').value.trim();
+    if (!url) { alert('URLを入力してください'); return; }
+    localStorage.setItem('gasUrl', url);
+    GAS_URL = url;
+    alert('✅ 保存しました');
+  }
+
+  // Settings: 接続テスト
+  async function testGasConnection() {
+    const url = document.getElementById('gas-url-input').value.trim();
+    const result = document.getElementById('test-result');
+    if (!url) { alert('URLを入力してください'); return; }
+    result.className = 'test-result';
+    result.textContent = '🔄 テスト中...';
+    result.style.display = 'block';
+    try {
+      const res = await fetch(url, { mode: 'cors' });
+      const data = await res.json();
+      result.className = 'test-result success';
+      result.textContent = '✅ 接続成功！スプレッドシートに繋がっています';
+    } catch(e) {
+      result.className = 'test-result fail';
+      result.textContent = '❌ 接続失敗。URLを確認してください';
+    }
   }
 
   // Member select
